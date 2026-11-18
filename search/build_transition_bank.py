@@ -6,7 +6,7 @@ by growing random partial observed graphs in each scene and enumerating every
 frontier candidate. The full graph is used ONLY to execute the one step (record
 r, d and reveal v in c'); candidate scoring features never see it.
 
-Leak firewall (base doc S7, extension S5):
+Leak firewall:
   - a candidate's context features use its VOTED type: objects of the observed
     boundary rooms vote via P(room|object) restricted to within DOOR_R of the door;
     no votes -> 'unknown'. The true type/counts of an unentered room appear only
@@ -40,7 +40,7 @@ def bucket(x, edges):
 
 def voted_type(cand_id, G, prior, door):
     """Room-type vote for an UNENTERED candidate = what the agent would glimpse THROUGH
-    the doorway (extension Point 6): the candidate's objects within DOOR_R of the door
+    the doorway: the candidate's objects within DOOR_R of the door
     vote P(room|object). This mirrors real execution-time observation -- the agent
     standing at the door sees these objects -- so it is observation, not a leak. The
     candidate's full contents/true label are still never used for scoring."""
@@ -72,7 +72,7 @@ def dnav_prims(G, u, e):
 
 
 def phi(c, cand_voted_type, dnav_b, y):
-    """Discrete signature for exact matching (extension Point 5)."""
+    """Discrete signature for exact matching."""
     return "|".join([c['cur_type'], ",".join(sorted(c['obs_types'])),
                      f"n{bucket(c['n_obs'], NOBS_BINS)}", cand_voted_type, f"d{dnav_b}", y])
 

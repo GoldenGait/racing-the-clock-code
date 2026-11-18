@@ -2,7 +2,7 @@
 
 HM3D has no room-type labels and no portals, but .semantic.txt DOES ship
 instance -> (category, REGION) groupings, and .semantic.glb encodes instance IDs as
-texture colors. So per the extension spec Point 3(a) + Point 6:
+texture colors. So:
 
   rooms       = the shipped semantic regions (no watershed pseudo-rooms needed)
   room type   = observed-object VOTING via the MP3D-counted P(room|object) prior

@@ -7,9 +7,24 @@
 | Room graphs, semantic prior, transition banks | `search/*.json` | about 60 MB |
 | Evaluation scene lists | `search/EVAL_SCENES.txt`, `search/EVAL_SCENES_MP3D.txt` | |
 | Benchmark episodes and per-episode results | `results/frozen400/` | under 1 MB |
-| Room-level expert traces on Matterport3D (1,640 episodes, 60 scenes, budgets 800 to 2500) | [Releases](../../../releases) page | about 1 MB compressed |
+| Expert traces, about 100,000 episodes | [Releases](../../../releases) page | about 35 MB compressed |
 
-The released traces are the Matterport3D episodes run with re-sweeping. Traces for the HM3D scenes, and for the object-level and greedy experts, will be added. Until then they can be regenerated with the commands in [PIPELINE.md](PIPELINE.md).
+## Released trace sets
+
+All sets exclude the ten evaluation scenes.
+
+| Archive | Expert | Scenes | Budgets | Episodes |
+|---|---|---|---|---:|
+| `room_level_traces_148scenes` | Room-level Bellman | 89 HM3D and 59 Matterport3D, the paper's training scenes | 2500 | 6,766 |
+| `room_level_expert_traces` | Room-level Bellman, with re-sweeping | 60 Matterport3D | 800, 1200, 2000, 2500 | 1,640 |
+| `room_level_traces_hm3d_expansion` | Room-level Bellman | 566 HM3D scenes without semantic annotation | 50 to 2000 | 41,048 |
+| `object_level_traces_148scenes` | Object-level Bellman | 89 HM3D and 59 Matterport3D, the same scenes as above | 2500 | 3,484 |
+| `object_level_traces_multibudget` | Object-level Bellman | 95 HM3D and 63 Matterport3D | 50, 150, 400, 800, 1200, 2000, 2500 | 6,937 |
+| `greedy_frontier_traces_hm3d_expansion` | Greedy frontier | 566 HM3D scenes, the same episodes as the room-level expansion set | 50 to 2000 | 41,037 |
+
+The 2500-step runs on the 148 scenes are long single rollouts per start. A shorter budget can be read from the same trace by stopping it early, because these runs choose rooms without looking at the remaining budget.
+
+The expansion sets use `search/room_graphs_hm3d_p592.json`. Point the expert at it with the `GRAPHS_HM3D` environment variable when regenerating or replaying those episodes.
 
 Rendered videos are not distributed, because they are renders of HM3D and Matterport3D scenes. Every trace stores the exact action sequence from a fixed start pose, so the videos can be regenerated with your own copy of the scenes (see below).
 

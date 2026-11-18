@@ -1,6 +1,6 @@
 """Stage C3 - empirical Bellman budget planner over the cross-scene transition bank.
 
-Implements the base spec S5/S6/S9: for a query (context c, candidate v, budget B),
+For a query (context c, candidate v, budget B),
     Qhat_y(c,B,v) = sum_i w_i [ r_i^y + Vhat_y(key(c'_i), B - d_i) ]      (d_i <= B)
     Vhat_y(c,B)   = max(0, max_v Qhat_y(c,B,v)),   Vhat_y(c,0) = 0
 with exact phi-signature matching first, softmax-weighted K-NN fallback, and

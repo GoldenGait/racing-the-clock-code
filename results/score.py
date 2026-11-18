@@ -32,6 +32,7 @@ def load_run(paths):
 def main():
     methods = {
         'Greedy frontier expert': clean(json.load(open(os.path.join(R, 'baselines_frozen.json')))['greedy']),
+        'Object-level Bellman expert': load_run([os.path.join(R, 'object_level_expert.json')]),
         'Room-level Bellman expert': load_run([os.path.join(R, 'room_level_expert.json')]),
         'Pretrained VLN': load_run([os.path.join(R, 'pretrained_vln.json')]),
         'VLN trained on room-level expert': load_run([os.path.join(R, 'room_level_vln.json')]),

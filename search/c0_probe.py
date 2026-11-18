@@ -11,8 +11,8 @@ expert's first action for that budget. Reported:
   - within-pair divergence rate (model gives different answers to the two prompts);
   - the same numbers for the BASE released model as a control (should be ~chance).
 
-  python c0_probe.py --ckpt $RTC_DATA/sft_ckpts/budget-pilot-A --gpu 0
-  python c0_probe.py --ckpt base --gpu 0          # released-weights control
+  python c0_probe.py --ckpt $RTC_DATA/sft_ckpts/uninavid-budget --dataset $RTC_DATA/dataset_eval --gpu 0
+  python c0_probe.py --ckpt base --dataset $RTC_DATA/dataset_eval --gpu 0     # released-weights control
 """
 from paths import DATA_ROOT
 import argparse, collections, json, os, sys
@@ -20,7 +20,7 @@ import argparse, collections, json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, f'{DATA_ROOT}/Uni-NaVid')
 
-DATASET = f'{DATA_ROOT}/dataset_hm3d_v2'
+DATASET = None    # set from --dataset
 EVAL_SCENES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'EVAL_SCENES.txt')
 BASE_CKPT = f'{DATA_ROOT}/Uni-NaVid/model_zoo/uninavid-7b-full-224-video-fps-1-grid-2'
 LOW, HIGH = 150, 800
@@ -47,8 +47,12 @@ def build_probes():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--ckpt', required=True, help="checkpoint dir, or 'base' for released weights")
+    ap.add_argument('--dataset', required=True,
+                    help='dataset folder built by flatten_uninavid.py from traces of the evaluation scenes')
     ap.add_argument('--gpu', type=int, default=0)
     a = ap.parse_args()
+    global DATASET
+    DATASET = a.dataset
     os.environ.setdefault('CUDA_VISIBLE_DEVICES', str(a.gpu))
 
     probes = build_probes()

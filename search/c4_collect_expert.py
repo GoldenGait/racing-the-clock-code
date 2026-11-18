@@ -1,9 +1,8 @@
 """Stage C4 (examples) - planner-driven COLLECTION expert, executed in habitat.
 
-Room ordering = the C3 empirical Bellman planner (replaces covtour's tour_order,
-extension Point 1). Loop (base doc S11): observe frontier -> Qhat for each candidate
+Room ordering = the C3 empirical Bellman planner. Loop: observe frontier -> Qhat for each candidate
 (voted type + live dnav from the agent's actual pose) -> enter argmax -> sweep its
-coverage viewpoints -> count NEW target instances within reach (Point 7) -> decrement
+coverage viewpoints -> count NEW target instances within reach -> decrement
 the budget by primitives actually spent -> replan. STOP when no candidate is feasible
 under the conservative bound d_bar = dnav + cmax(voted type) (Points 2 & 4).
 
@@ -429,7 +428,7 @@ def run(stem, cat, budget, gpu, out, seed=0, trace_dir='', dataset='mp3d', start
                     break                            # [P13] nothing left here to see
 
     # [POLICY P6, 2026-08-01] start-room instances are EXCLUDED from collection: the
-    # base spec's objective sums rewards over SELECTED frontier rooms only -- the start
+    # the objective sums rewards over SELECTED frontier rooms only -- the start
     # room is context (c0), never a chosen action, so its contents are not "collected".
     # (Replaces P1's free crediting, which pre-lit stars at t=0 in object-rich starts.)
     # They are pre-marked counted so they can never be credited, and n_reachable already

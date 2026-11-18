@@ -17,7 +17,6 @@ from replay_render import MapArt, font                                        # 
 ACT = {'f': 'move_forward', 'l': 'turn_left', 'r': 'turn_right'}
 BG = (10, 10, 12); GOLD = (255, 208, 0); INK = (235, 235, 235); SOFT = (185, 190, 200); RED = (255, 55, 55)
 C150, C2000 = (90, 175, 255), (255, 120, 30)
-GATE = f'{DATA_ROOT}/sft_ckpts/rollout_gate_uninavid-budget-full-v3.json'
 
 
 def prefix(a, b):
@@ -56,9 +55,10 @@ def replay(sim, G, start, cat, actions, keep_frames=None):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('--pair', default='GLAQ4DNUx5U:chair'); ap.add_argument('--gpu', type=int, default=0)
+    ap.add_argument('--gate', required=True, help='the json written by rollout_gate.py for the checkpoint to show')
     ap.add_argument('--out', required=True); ap.add_argument('--fps', type=int, default=24); ap.add_argument('--keyframes', default='')
     a = ap.parse_args()
-    gate = json.load(open(GATE)); Gall = json.load(open(f'{HERE}/room_graphs_hm3d_v2.json'))
+    gate = json.load(open(a.gate)); Gall = json.load(open(f'{HERE}/room_graphs_hm3d_v2.json'))
     stem, cat = a.pair.split(':')
     # replay every pair once (verification + grid), keep camera frames only for the featured pair
     runs = {}

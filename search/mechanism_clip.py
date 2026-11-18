@@ -38,7 +38,8 @@ def phases(tr, room):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--trace', default=f'{DATA_ROOT}/p14fig_bellman/U3oQjwTuMX8_L0_chair_B400_trace.json')
+    ap.add_argument('--trace', default=os.path.join(HERE, 'examples', 'U3oQjwTuMX8_L0_chair_B400_trace.json'),
+                    help='a room-level expert trace; the default is the episode shown in the paper')
     ap.add_argument('--room', default='0_7'); ap.add_argument('--gpu', type=int, default=0)
     ap.add_argument('--storyboard', default=''); ap.add_argument('--video', default='')
     ap.add_argument('--fps', type=int, default=18)

@@ -54,7 +54,7 @@ Mean % of reachable targets collected on ten held-out HM3D scenes (± 95% CI hal
 | VLN trained on object-level expert | 28.3 ±6.2 | 45.0 ±7.3 | 58.6 ±7.5 | 65.5 ±7.4 |
 | **VLN trained on room-level expert (ours)** | **31.6** ±6.8 | **58.0** ±7.4 | **64.5** ±7.1 | **72.7** ±6.8 |
 
-The per-episode results behind four of these rows ship in [`results/`](results/), and one command recomputes them:
+The per-episode results behind five of these rows (the three experts, the pretrained VLN and the room-level VLN) ship in [`results/`](results/), and one command recomputes them:
 
 ```bash
 python results/score.py
@@ -163,7 +163,7 @@ python /path/to/racing-the-clock-code/results/score.py "$RTC_DATA/bench_out/resu
 |---|---|
 | Room graphs, semantic prior, transition banks, evaluation scenes | In this repository, under `search/` |
 | Benchmark definition (400 frozen episodes) and per-episode results | In this repository, under `results/` |
-| Expert traces (recorded action sequences) | Room-level traces on Matterport3D are attached to the [releases](../../releases) page. More to follow |
+| Expert traces (recorded action sequences) | About 100,000 episodes from all three experts, attached to the [releases](../../releases) page |
 | Trained model weights | Coming soon |
 | Rendered training videos | Not distributed. Regenerate them from the traces with your own copy of the scenes |
 
