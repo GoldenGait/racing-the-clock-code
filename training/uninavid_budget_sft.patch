@@ -1,0 +1,203 @@
+diff --git a/uninavid/model/language_model/llava_llama_vid.py b/uninavid/model/language_model/llava_llama_vid.py
+index 7ee0425..28f66e1 100755
+--- a/uninavid/model/language_model/llava_llama_vid.py
++++ b/uninavid/model/language_model/llava_llama_vid.py
+@@ -28,12 +28,13 @@ from uninavid.model.uninavid_arch import UniNaVIDMetaModel, UniNaVIDMetaForCausa
+ from uninavid.constants import NAVIGATION_IDENTIFIER
+ 
+ import os
+-print("Setting WANDB_MODE to offline")
+-os.environ["WANDB_MODE"] = "offline"
++# [budget-SFT] respect the caller's WANDB_MODE (was: hard-forced offline)
++os.environ.setdefault("WANDB_MODE", "offline")
+ 
+ 
+ class LlavaConfig(LlamaConfig):
+-    model_type = "llava"
++    # renamed from "llava" to avoid collision with transformers>=4.36 native LLaVA
++    model_type = "llava_vid"
+ 
+ class LlavaAttLlamaModel(UniNaVIDMetaModel, LlamaModel):
+     config_class = LlavaConfig
+@@ -146,5 +147,5 @@ class LlavaLlamaAttForCausalLM(LlamaForCausalLM, UniNaVIDMetaForCausalLM):
+         )
+         return model_inputs
+ 
+-AutoConfig.register("llava", LlavaConfig)
++AutoConfig.register("llava_vid", LlavaConfig)
+ AutoModelForCausalLM.register(LlavaConfig, LlavaLlamaAttForCausalLM)
+diff --git a/uninavid/train/llava_trainer.py b/uninavid/train/llava_trainer.py
+index 9a39504..9de14c0 100755
+--- a/uninavid/train/llava_trainer.py
++++ b/uninavid/train/llava_trainer.py
+@@ -10,7 +10,10 @@ try:
+ except:
+     print('no smdistributed.modelparallel.torch')
+ 
+-from fairscale.optim import OSS
++try:
++    from fairscale.optim import OSS
++except ImportError:
++    OSS = None      # fairscale unused since ShardedDDP removal (transformers>=4.34)
+ from torch.utils.data import Sampler
+ 
+ from transformers import Trainer
+@@ -19,7 +22,6 @@ from transformers.trainer_pt_utils import (
+     get_parameter_names,
+ )
+ from transformers.trainer_utils import (
+-    ShardedDDPOption,
+     has_length
+ )
+ from transformers.utils import (
+@@ -184,8 +186,8 @@ class LLaVATrainer(Trainer):
+         """
+         if is_sagemaker_mp_enabled():
+             return super().create_optimizer()
+-        if self.sharded_ddp == ShardedDDPOption.SIMPLE:
+-            return super().create_optimizer()
++        # [budget-SFT] ShardedDDPOption removed in transformers>=4.34; fairscale
++        # sharded-DDP path never used (we run deepspeed) -- branch deleted.
+ 
+         opt_model = self.model
+ 
+@@ -255,7 +257,7 @@ class LLaVATrainer(Trainer):
+ 
+             optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
+ 
+-            if self.sharded_ddp == ShardedDDPOption.SIMPLE:
++            if False:  # [budget-SFT] fairscale OSS path removed (transformers>=4.34)
+                 self.optimizer = OSS(
+                     params=optimizer_grouped_parameters,
+                     optim=optimizer_cls,
+diff --git a/uninavid/train/train.py b/uninavid/train/train.py
+index afa23cb..726246f 100755
+--- a/uninavid/train/train.py
++++ b/uninavid/train/train.py
+@@ -128,6 +128,7 @@ class ModelArguments:
+ class DataArguments:
+     data_path: str = field(default=None,
+                            metadata={"help": "Path to the training data."})
++    val_data_path: Optional[str] = field(default=None)   # [budget-SFT] eval split
+     lazy_preprocess: bool = False
+     is_multimodal: bool = False
+     image_folder: Optional[str] = field(default=None)
+@@ -1057,12 +1058,29 @@ class LazySupervisedDataset(Dataset):
+                             self.data_args, input_prompt)
+                     else:
+                         vr = VideoReader(video_file, ctx=cpu(0))
+-                        sample_fps = round(vr.get_avg_fps()/self.data_args.video_fps)
+-                        frame_idx = [i for i in range(0, len(vr), sample_fps)]
++                        if 'end_frame' in self.list_data_dict[i]:
++                            # [P15] episode-level video: the record's history is frames
++                            # 0..end_frame of the shared per-episode file (already at the
++                            # training stride), so no per-record clip is stored on disk
++                            frame_idx = list(range(0, int(self.list_data_dict[i]['end_frame']) + 1))
++                        else:
++                            sample_fps = round(vr.get_avg_fps()/self.data_args.video_fps)
++                            frame_idx = [i for i in range(0, len(vr), sample_fps)]
+                         video = vr.get_batch(frame_idx).asnumpy()
+                         if  "NAV_ID" in self.list_data_dict[i]['id'] and len(frame_idx) > 1: # TODO: temp fix for nav
+                             assert len(video) > 1
+-                            
++
++                            # [budget-SFT frame cap] history costs 4 tok/frame vs
++                            # model_max_length 2048 -> cap history at MAX_NAV_HISTORY
++                            # frames by uniform subsampling; the LAST frame (current
++                            # observation, 64 tok) is always kept exact.
++                            MAX_NAV_HISTORY = 448
++                            if len(video) - 1 > MAX_NAV_HISTORY:
++                                hist = len(video) - 1
++                                keep = [round(j * (hist - 1) / (MAX_NAV_HISTORY - 1)) for j in range(MAX_NAV_HISTORY)]
++                                keep = sorted(set(keep)) + [hist]
++                                video = video[keep]
++
+                             last_frame_index = len(video) - 1                           
+                             max_drop_frames = math.ceil(0.1 * (len(video) - 1))
+ 
+@@ -1178,11 +1196,52 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, dat
+                                 data_path=data_args.data_path,
+                                 data_args=data_args)
+     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
++    eval_dataset = None
++    if getattr(data_args, 'val_data_path', None):    # [budget-SFT] val loss support
++        eval_dataset = LazySupervisedDataset(tokenizer=tokenizer,
++                                data_path=data_args.val_data_path,
++                                data_args=data_args)
+     return dict(train_dataset=train_dataset,
+-                eval_dataset=None,
++                eval_dataset=eval_dataset,
+                 data_collator=data_collator)
+ 
+ 
++class ForceLRCallback(transformers.TrainerCallback):
++    """[budget-SFT v2] Version-skew-proof training guarantees:
++    - LR written through EVERY optimizer wrapper layer (deepspeed wraps HF's);
++    - parameter-motion probe: prints the L2 drift of a trainable projector param
++      (ground truth that gradient steps are actually applied)."""
++    def __init__(self, base_lr, warmup_ratio=0.03):
++        self.base_lr = base_lr; self.warmup_ratio = warmup_ratio; self.ref = None; self.pname = None
++    def _set_lr(self, opt, lr):
++        seen = set()
++        while opt is not None and id(opt) not in seen:
++            seen.add(id(opt))
++            if hasattr(opt, 'param_groups'):
++                for g in opt.param_groups:
++                    g['lr'] = lr
++            opt = getattr(opt, 'optimizer', None)
++    def on_step_begin(self, args, state, control, **kw):
++        import math as _m
++        total = max(1, state.max_steps)
++        warm = max(1, int(self.warmup_ratio * total))
++        step = state.global_step
++        lr = self.base_lr * (step + 1) / warm if step < warm else              0.5 * self.base_lr * (1 + _m.cos(_m.pi * (step - warm) / max(1, total - warm)))
++        self._set_lr(kw.get('optimizer'), lr)
++        model = kw.get('model')
++        if model is not None and self.ref is None:
++            for n, p in model.named_parameters():
++                if 'mm_projector' in n and p.requires_grad:
++                    self.pname = n; self.ref = p.detach().float().clone(); break
++        if step % 5 == 0 and state.is_world_process_zero:
++            drift = -1.0
++            if model is not None and self.ref is not None:
++                for n, p in model.named_parameters():
++                    if n == self.pname:
++                        drift = (p.detach().float() - self.ref).norm().item(); break
++            print(f"FORCED_LR={lr:.3e} step={step} PARAM_DRIFT={drift:.3e}", flush=True)
++
++
+ def train():
+     global local_rank
+ 
+@@ -1279,7 +1338,9 @@ def train():
+             model_args.model_name_or_path,
+             cache_dir=training_args.cache_dir,
+             model_max_length=training_args.model_max_length,
+-            padding_side="right"
++            padding_side="right",
++            legacy=True,   # [budget-SFT] restore 4.31 SP behavior; imgsp_v1 label
++                           # constants (+3/+2/+6) assume it (verified: 0 mismatches)
+         )
+     else:
+         tokenizer = transformers.AutoTokenizer.from_pretrained(
+@@ -1288,6 +1349,7 @@ def train():
+             model_max_length=training_args.model_max_length,
+             padding_side="right",
+             use_fast=False,
++            legacy=True,   # [budget-SFT] see above
+         )
+ 
+     if model_args.version == "v0":
+@@ -1362,7 +1424,11 @@ def train():
+ 
+     data_module = make_supervised_data_module(tokenizer=tokenizer,
+                                               data_args=data_args)
+-    trainer = LLaVATrainer(model=model,
++    try:    # [budget-SFT] 4.37 refuses to save invalid generation configs
++        model.generation_config.do_sample = True
++    except Exception:
++        pass
++    trainer = LLaVATrainer(callbacks=[ForceLRCallback(training_args.learning_rate, training_args.warmup_ratio)], model=model,
+                     tokenizer=tokenizer,
+                     args=training_args,
+                     **data_module)

@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper."
+title: "Racing the Clock: Teaching VLNs Budget-Conditioned Object Search"
+authors:
+  - family-names: Meher
+    given-names: Maitree
+  - family-names: He
+    given-names: Siming
+  - family-names: Sastry
+    given-names: S. Shankar
+  - family-names: Malik
+    given-names: Jitendra
+  - family-names: Tomlin
+    given-names: Claire
+  - family-names: Frey
+    given-names: Jonas
+preferred-citation:
+  type: article
+  title: "Racing the Clock: Teaching VLNs Budget-Conditioned Object Search"
+  authors:
+    - family-names: Meher
+      given-names: Maitree
+    - family-names: He
+      given-names: Siming
+    - family-names: Sastry
+      given-names: S. Shankar
+    - family-names: Malik
+      given-names: Jitendra
+    - family-names: Tomlin
+      given-names: Claire
+    - family-names: Frey
+      given-names: Jonas
+  journal: "arXiv preprint arXiv:2611.17442"
+  year: 2026
+  url: "https://arxiv.org/abs/2611.17442"

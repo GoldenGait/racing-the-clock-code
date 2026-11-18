@@ -1,0 +1,12 @@
+# Frozen held-out evaluation scenes (2026-08-03). Excluded from SFT data
+# AND from the transition bank used for reference runs. HM3D val split.
+ziup5kvtCCR
+y9hTuugGdiq
+VBzV5z6i1WS
+GLAQ4DNUx5U
+5cdEh9F2hJL
+svBbv1Pavdk
+q5QZSEeHe5g
+mv2HUxq3B53
+h1zeeAwLh9Z
+Nfvxx8J5NCo

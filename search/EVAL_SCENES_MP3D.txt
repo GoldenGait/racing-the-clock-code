@@ -1,0 +1,8 @@
+# Frozen MP3D held-out evaluation scenes (compact <=10-room pool), chosen 2026-08-08
+# BEFORE any MP3D training assembly. Diverse sizes (4-10 rooms) with all six target
+# categories covered across the set. SFT assemblies MUST exclude these scenes.
+EDJbREhghzL
+V2XKFyX4ASd
+HxpKQynjfin
+RPmz2sHmrrY
+XcA2TqTSSAj
