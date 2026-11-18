@@ -7,7 +7,7 @@ The pipeline uses two Python environments, because the simulator and the model n
 | Simulator | Experts, data generation, replay and visualization | Python 3.9, habitat-sim 0.3.3 |
 | Model | Training, benchmarking, the robot inference server | Python 3.10, PyTorch 2.x, transformers 4.37.2 |
 
-Scripts that need both (benchmarking a model in simulation) either run in an environment that has both installed, or use the two-process bridge in `search/sim_bridge.py` and `search/bench_model_bridge.py`.
+Benchmarking a model in simulation needs both. Either install habitat-sim into the model environment as well and use `search/bench_model.py`, or keep them apart and use the two-process bridge (`search/bench_model_bridge.py` with `search/sim_bridge.py`).
 
 ## 1. Simulator environment
 

@@ -89,18 +89,25 @@ See [`training/README.md`](../training/README.md) for the recipe and hardware.
 
 The benchmark is 400 frozen episodes: ten held-out HM3D scenes, with fixed target categories, start poses and budgets of 150, 400, 800 and 2000.
 
+`bench_model.py` loads the model and the simulator in one process, so it needs an environment that has both habitat-sim and Uni-NaVid installed. Run it from the Uni-NaVid folder, because the checkpoint refers to the vision tower by a relative path:
+
 ```bash
+cd $RTC_DATA/Uni-NaVid
+REPO=/path/to/racing-the-clock-code
 # bench_model.py <shard> <nshards> <gpu> <checkpoint> <output dir>
-python bench_model.py 0 1 0 $RTC_DATA/sft_ckpts/uninavid-budget $RTC_DATA/bench_out
-python ../results/score.py "$RTC_DATA/bench_out/results_*.json"
+python $REPO/search/bench_model.py 0 1 0 $RTC_DATA/sft_ckpts/uninavid-budget $RTC_DATA/bench_out
+python $REPO/results/score.py "$RTC_DATA/bench_out/results_*.json"
 ```
+
+If the two cannot share an environment, use `bench_model_bridge.py`, which runs the model in one Python and drives the simulator in another through `sim_bridge.py`.
 
 Runs are sharded and resumable: start several shards on different GPUs and each picks up where it stopped.
 
 To test that the budget changes behavior, and not only how long the model runs:
 
 ```bash
-python rollout_gate.py --ckpt $RTC_DATA/sft_ckpts/uninavid-budget --gpu 0
+cd $RTC_DATA/Uni-NaVid
+python $REPO/search/rollout_gate.py --ckpt $RTC_DATA/sft_ckpts/uninavid-budget --gpu 0
 ```
 
 This rolls the model out on the same episodes at 150 and 2000 steps and compares the trajectories.

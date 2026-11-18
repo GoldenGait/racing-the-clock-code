@@ -143,13 +143,18 @@ python tsp_oracle.py --dataset hm3d --stem 5cdEh9F2hJL --cat chair --budget 400 
     --out $RTC_DATA/traces/object_level/5cdEh9F2hJL_chair_B400
 ```
 
+`5cdEh9F2hJL` is one of the ten evaluation scenes. It is fine for trying the experts, but collect training traces on other scenes: `check_contamination.py` rejects a dataset that contains evaluation scenes.
+
 Then build training records, fine-tune, and benchmark:
 
 ```bash
 python flatten_uninavid.py --trace-dir $RTC_DATA/traces/room_level --out-dir $RTC_DATA/dataset
 bash ../training/train_uninavid.sh
-python bench_model.py 0 1 0 $RTC_DATA/sft_ckpts/uninavid-budget $RTC_DATA/bench_out
-python ../results/score.py "$RTC_DATA/bench_out/results_*.json"
+
+# the benchmark runs from the Uni-NaVid folder, in an environment with both the simulator and the model
+cd $RTC_DATA/Uni-NaVid
+python /path/to/racing-the-clock-code/search/bench_model.py 0 1 0 $RTC_DATA/sft_ckpts/uninavid-budget $RTC_DATA/bench_out
+python /path/to/racing-the-clock-code/results/score.py "$RTC_DATA/bench_out/results_*.json"
 ```
 
 ## Data and checkpoints
